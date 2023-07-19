@@ -1,0 +1,10 @@
+__pycache__/
+venv/
+.idea/
+
+.env
+test_res/
+photos/
+chromedriver*
+conf.ini
+insta_cookies.csv

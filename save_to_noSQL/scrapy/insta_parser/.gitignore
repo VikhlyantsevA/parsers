@@ -1,0 +1,7 @@
+chromedriver*
+conf.ini
+insta_cookies.csv
+
+.idea/
+venv/
+__pycache__/
