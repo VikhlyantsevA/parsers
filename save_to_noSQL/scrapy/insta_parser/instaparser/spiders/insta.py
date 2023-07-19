@@ -44,6 +44,7 @@ class InstaSpider(scrapy.Spider):
         self.following_api_link = 'https://instagram.com/api/v1/friendships/{user_id}/following/?{following_attrs}'
         self.followers_api_link = 'https://instagram.com/api/v1/friendships/{user_id}/followers/?{followers_attrs}'
 
+
     def start_requests(self):
         if not self.start_urls and hasattr(self, 'start_url'):
             raise AttributeError(
@@ -56,6 +57,7 @@ class InstaSpider(scrapy.Spider):
                 cookies=self.login(start_url),
                 dont_filter=True
             )
+
 
     def login(self, start_url):
         options = Options()
@@ -140,6 +142,7 @@ class InstaSpider(scrapy.Spider):
                                              'cookies': cookies,
                                              'recursive': True})
 
+
     def parse_user_info(self, response: HtmlResponse, **kwargs):
         j_body = response.json()
         user_id = j_body.get('data').get('user').get('id')
@@ -176,6 +179,7 @@ class InstaSpider(scrapy.Spider):
                                              'followers_attrs': followers_attrs.copy(),
                                              **kwargs.copy()})
 
+
     def parse_user_following(self, response: HtmlResponse, **kwargs):
         j_body = response.json()
         for user in j_body.get('users'):
@@ -205,6 +209,7 @@ class InstaSpider(scrapy.Spider):
 
         yield InstaparserItem(user_id=kwargs['user_id'],
                               following_id=following_id)
+
 
     def parse_user_followers(self, response: HtmlResponse, **kwargs):
         j_body = response.json()
@@ -237,111 +242,12 @@ class InstaSpider(scrapy.Spider):
                               followers_id=followers_id)
 
 
-
-
-    # def parse(self, response: HtmlResponse):
-    #     cookies = response.request.cookies.copy()
-    #     print(cookies)
-    #     for user in self.to_parse_users:
-    #         yield response.follow(url=f'/{user}',
-    #                               callback=self.get_user_info,
-    #                               cookies=cookies,
-    #                               cb_kwargs={'username': user, 'cookies': cookies})
-    #
-    # def get_user_info(self, response: HtmlResponse, **kwargs):
-    #     user_info_attrs = {'username': kwargs['username']}
-    #     user_info_link = self.user_info_api_link.format(user_info_attrs=urlencode(user_info_attrs))
-    #     yield response.follow(
-    #         user_info_link,
-    #         headers={'User-Agent': 'Instagram 155.0.0.37.107'},
-    #         callback=self.parse_user_data,
-    #         cookies=kwargs['cookies'].copy(),
-    #         cb_kwargs=kwargs.copy()
-    #     )
-    #
-    # def parse_user_data(self, response: HtmlResponse, **kwargs):
-    #     j_body = response.json()
-    #     user_id = j_body.get('data').get('user').get('id')
-    #     profile_pic_url_hd = j_body.get('data').get('user').get('profile_pic_url_hd')
-    #     user_info = {'user_id': user_id,
-    #                  'profile_pic_url_hd': profile_pic_url_hd}
-    #     print()
-    #     following_attrs = {'count': 12}
-    #     user_following_link = self.following_api_link.format(user_id=user_id, following_attrs=urlencode(following_attrs))
-    #     yield response.follow(
-    #         user_following_link,
-    #         headers={'User-Agent': 'Instagram 155.0.0.37.107'},
-    #         callback=self.parse_user_following,
-    #         cookies=kwargs['cookies'].copy(),
-    #         cb_kwargs={**user_info.copy(), 'following_attrs': following_attrs.copy(), **kwargs.copy()}
-    #     )
-    #
-    #     followers_attrs = {'count': 12,
-    #                        'search_surface': 'follow_list_page'}
-    #     user_followers_link = self.followers_api_link.format(user_id=user_id, followers_attrs=urlencode(followers_attrs))
-    #     yield response.follow(
-    #         user_followers_link,
-    #         headers={'User-Agent': 'Instagram 155.0.0.37.107'},
-    #         callback=self.parse_user_followers,
-    #         cookies=kwargs['cookies'].copy(),
-    #         cb_kwargs={**user_info.copy(), 'followers_attrs': followers_attrs.copy(), **kwargs.copy()}
-    #     )
-    #
-    # def parse_user_following(self, response: HtmlResponse, **kwargs):
-    #     j_body = response.json()
-    #     k_list = ['pk', 'username', 'profile_pic_url']
-    #     following_info = [{('user_id' if k == 'pk' else k): str(user.get(k)) for k in k_list} for user in j_body.get('users')]
-    #     next_max_id = j_body.get('next_max_id')
-    #     if next_max_id:
-    #         new_kwargs = kwargs.copy()
-    #         new_kwargs['following_attrs']['max_id'] = next_max_id
-    #         user_following_link = self.following_api_link \
-    #             .format(user_id=kwargs['user_id'], following_attrs=urlencode(new_kwargs['following_attrs']))
-    #
-    #         yield response.follow(
-    #             user_following_link,
-    #             headers={'User-Agent': 'Instagram 155.0.0.37.107'},
-    #             callback=self.parse_user_following,
-    #             cookies=new_kwargs['cookies'],
-    #             cb_kwargs=new_kwargs
-    #         )
-    #
-    #     yield InstaparserItem(
-    #         user_info={'user_id': str(kwargs.get('user_id')),
-    #                    'username': kwargs.get('username'),
-    #                    'profile_pic_url': kwargs.get('profile_pic_url')},
-    #         following_info=following_info
-    #     )
-    #
-    # def parse_user_followers(self, response: HtmlResponse, **kwargs):
-    #     j_body = response.json()
-    #     k_list = ['pk', 'username', 'profile_pic_url']
-    #     followers_info = [{('user_id' if k == 'pk' else k): str(user.get(k)) for k in k_list} for user in j_body.get('users')]
-    #     next_max_id = j_body.get('next_max_id')
-    #     if next_max_id:
-    #         new_kwargs = kwargs.copy()
-    #         new_kwargs['followers_attrs']['max_id'] = next_max_id
-    #         user_followers_link = self.followers_api_link \
-    #             .format(user_id=kwargs['user_id'], followers_attrs=urlencode(new_kwargs['followers_attrs']))
-    #
-    #         yield response.follow(
-    #             user_followers_link,
-    #             headers={'User-Agent': 'Instagram 155.0.0.37.107'},
-    #             callback=self.parse_user_followers,
-    #             cookies=new_kwargs['cookies'],
-    #             cb_kwargs=new_kwargs)
-    #
-    #     yield InstaparserItem(
-    #         user_info={'user_id': str(kwargs.get('user_id')),
-    #                    'username': kwargs.get('username'),
-    #                    'profile_pic_url': kwargs.get('profile_pic_url')},
-    #         followers_info=followers_info)
-
     def get_cookies_values(self, file):
         with open(file, encoding='utf-8-sig') as f:
             dict_reader = DictReader(f)
             list_of_dicts = list(dict_reader)
         return list_of_dicts
+
 
     def get_csrftoken(self, driver):
         page_reloads = 2
@@ -359,10 +265,12 @@ class InstaSpider(scrapy.Spider):
                 driver.refresh()
         return csrf_token
 
+
     def get_csrftoken_from_html(self, text):
         '''Get csrf-token for authentication'''
         csrf_token_value = re.search(r'"csrf_token"\s*:\s*"(?P<token>\w+)"', text).group('token')
         return {'name': 'csrftoken', 'value': csrf_token_value, 'domain': '.instagram.com'}
+
 
     def random_sleep(self, min_time: float, max_time: float):
         '''Generates float delay value from range'''
