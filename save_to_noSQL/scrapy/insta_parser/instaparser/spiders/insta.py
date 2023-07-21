@@ -40,9 +40,9 @@ class InstaSpider(scrapy.Spider):
         self.start_urls = ['https://www.instagram.com/']
         self.to_parse_users = kwargs.get('users')
 
-        self.user_info_api_link = 'https://instagram.com/api/v1/users/web_profile_info/?{user_info_attrs}'
-        self.following_api_link = 'https://instagram.com/api/v1/friendships/{user_id}/following/?{following_attrs}'
-        self.followers_api_link = 'https://instagram.com/api/v1/friendships/{user_id}/followers/?{followers_attrs}'
+        self.user_info_api_link = 'https://www.instagram.com/api/v1/users/web_profile_info/?{user_info_attrs}'
+        self.following_api_link = 'https://www.instagram.com/api/v1/friendships/{user_id}/following/?{following_attrs}'
+        self.followers_api_link = 'https://www.instagram.com/api/v1/friendships/{user_id}/followers/?{followers_attrs}'
 
 
     def start_requests(self):
@@ -62,7 +62,7 @@ class InstaSpider(scrapy.Spider):
     def login(self, start_url):
         options = Options()
         options.add_argument("start-maximized")
-        service = Service(os.path.join(PROJECT_ROOT, "driver", "chromedriver"))
+        service = Service(os.path.join(PROJECT_ROOT, "drivers", "chromedriver"))
 
         with webdriver.Chrome(service=service, options=options) as driver:
             driver.implicitly_wait(1)
@@ -70,7 +70,7 @@ class InstaSpider(scrapy.Spider):
 
             driver.get(start_url)
             # Accept cookies using
-            cookie_button_xpath = "//div[@role='dialog']//button[text()='Разрешить только основные cookie']"
+            cookie_button_xpath = "//div[@role='dialog']//button[text()='Allow all cookies']"
             if driver.element_exists(By.XPATH, cookie_button_xpath):
                 driver.find_element(By.XPATH, cookie_button_xpath).click()
                 wait.until(EC.invisibility_of_element((By.XPATH, cookie_button_xpath)))
@@ -91,7 +91,6 @@ class InstaSpider(scrapy.Spider):
                     # If login was failed with given cookies, then try to reuse existing cookies.
                     # After that get and exchange csrf-token.
                     new_cookies = [*self.get_cookies_values('insta_cookies.csv'), self.get_csrftoken(driver)]
-                    print(new_cookies)
                     driver.delete_all_cookies()
                     for cookie in new_cookies:
                         driver.add_cookie(cookie)
@@ -111,18 +110,18 @@ class InstaSpider(scrapy.Spider):
                     wait.until_not(EC.url_to_be(login_page))
                     break
                 except TimeoutException:
-                    if i == login_attempts - 1:
+                    if i == login_attempts:
                         raise CloseSpider("Logging failed. Try again later.")
                     print("TimeoutException. Can't login. Trying again with verified cookies.")
                     driver.refresh()
 
             # Push the button of saving data push-notification
-            save_login_xpath = "//button[text()='Сохранить данные']"
+            save_login_xpath = "//button[text()='Save Info']"
             if driver.element_exists(By.XPATH, save_login_xpath):
                 wait.until(EC.element_to_be_clickable((By.XPATH, save_login_xpath))).click()
 
             # Push the button of "show/don't show notifications" push-notification
-            not_show_notifications_xpath = "//div[@role='dialog']//button[text()='Не сейчас']"
+            not_show_notifications_xpath = "//div[@role='dialog']//button[text()='Not Now']"
             if driver.element_exists(By.XPATH, not_show_notifications_xpath):
                 wait.until(EC.element_to_be_clickable((By.XPATH, not_show_notifications_xpath))).click()
 
@@ -164,7 +163,7 @@ class InstaSpider(scrapy.Spider):
                                   headers={'User-Agent': 'Instagram 155.0.0.37.107'},
                                   callback=self.parse_user_following,
                                   cookies=kwargs['cookies'].copy(),
-                                  cb_kwargs={'user_id': user_id.copy(),
+                                  cb_kwargs={'user_id': user_id,
                                              'following_attrs': following_attrs.copy(),
                                              **kwargs.copy()})
 
@@ -175,7 +174,7 @@ class InstaSpider(scrapy.Spider):
                                   headers={'User-Agent': 'Instagram 155.0.0.37.107'},
                                   callback=self.parse_user_followers,
                                   cookies=kwargs['cookies'].copy(),
-                                  cb_kwargs={'user_id': user_id.copy(),
+                                  cb_kwargs={'user_id': user_id,
                                              'followers_attrs': followers_attrs.copy(),
                                              **kwargs.copy()})
 
@@ -256,7 +255,7 @@ class InstaSpider(scrapy.Spider):
             if csrf_token:
                 return csrf_token.copy()
             if i == page_reloads - 1:
-                # Токен можно попробовать получить из html страницы
+                # Get csrf-token from html-code of webpage
                 csrf_token = self.get_csrftoken_from_html(driver.page_source)
                 if not csrf_token:
                     raise CloseSpider("There is no csrf token found. Can't login.")

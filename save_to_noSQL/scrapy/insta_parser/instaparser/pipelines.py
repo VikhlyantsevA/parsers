@@ -27,5 +27,5 @@ class InstaparserPipeline:
         if item.get('following_id'):
             users_connections = [{'user_id': following_id, 'follower_id': item.get('user_id')}
                           for following_id in item.get('following_id')]
-            self.m_utils.save_documents('insta', 'followers', users_connections)
+            self.m_utils.save_documents('insta', 'users_connections', users_connections)
         return item
