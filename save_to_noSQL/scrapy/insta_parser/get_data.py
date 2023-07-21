@@ -1,77 +1,42 @@
-# Если нет файла с куками то предусмотреть пропуск одной попытки в методе login (сразу вызов ошибки)
+"""
+Python script to get user followers info.
+"""
 from pymongo import MongoClient
+from pprint import pprint
+
+from my_lib.utils import hash_struct
 
 if __name__ == '__main__':
     client = MongoClient('localhost', 27017)
     mongobase = client.insta
 
-    username = 'soh.y4w00'
+    # Find friends of user with `username`
+    username = 'mycatsardor'
 
-    # У пользователя могли поменяться картинка, имя, но id остается.
-    # Если правилами Instagram предусмотрены только уникальные имена, то len(user_id) = 1
-    user_followers = mongobase['followers'] \
-        .aggregate([
-            {
-                '$lookup': {
-                    'from': 'users',
-                    'localField': 'user_id',
-                    'foreignField': 'user_id',
-                    'as': 'user_info'
-                }
-            },
-            {
-                '$unwind': '$user_info'
-            },
-            {
-                '$lookup': {
-                    'from': 'users',
-                    'localField': 'follower_id',
-                    'foreignField': 'user_id',
-                    'as': 'follower_info'
-                }
-            },
-            {
-                '$unwind': '$follower_info'
-            },
+    # Make join of `users` info and `users_connections` and get `subscriber_info` of user with `username`.
+    user_followers = mongobase['users_connections'] \
+        .aggregate([{'$lookup': {'from': 'users',
+                                 'localField': 'user_id',
+                                 'foreignField': 'user_id',
+                                 'as': 'user_info'}},
+            {'$unwind': '$user_info'},
+            {"$addFields": {'subscriber_id': {"$toString": "$subscriber_id"}}},
+            {'$lookup': {'from': 'users',
+                         'localField': 'subscriber_id',
+                         'foreignField': 'user_id',
+                         'as': 'subscriber_info'}},
+            {'$unwind': '$subscriber_info'},
             {'$match': {'user_info.username': username}},
-            {'$project': {'_id': 0, 'follower_info': {'username': 1}}}
+            {'$project': {'_id': 0, 'subscriber_info': 1}}
         ])
 
-    user_followers_list = set([document['follower_info']['username'] for document in user_followers])
-    print(user_followers_list)
+    # Make hash of target subscriber_info and get only unique docs.
+    # Duplicates may appear because different profile pictures links may be gotten for one user.
+    # So that there will be 2 or more documents for one user.
+    # PS: Make document creation time to filter the newest one
+    user_followers_info = dict()
+    for doc in user_followers:
+        hash = hash_struct(dict(doc['subscriber_info']))
+        user_followers_info[hash] = doc['subscriber_info']
 
-    user_followings = mongobase['followers'] \
-        .aggregate([
-        {
-            '$lookup': {
-                'from': 'users',
-                'localField': 'user_id',
-                'foreignField': 'user_id',
-                'as': 'user_info'
-            }
-        },
-        {
-            '$unwind': '$user_info'
-        },
-        {
-            '$lookup': {
-                'from': 'users',
-                'localField': 'follower_id',
-                'foreignField': 'user_id',
-                'as': 'follower_info'
-            }
-        },
-        {
-            '$unwind': '$follower_info'
-        },
-        {'$match': {'follower_info.username': username}},
-        {'$project': {'_id': 0, 'user_info': {'username': 1}}}
-    ])
-
-    user_followings_list = set([document['user_info']['username'] for document in user_followings])
-    print(user_followings_list)
-
-    # Проверка (можно при парсинге данных оставить только данного пользователя чтобы ускорить процесс)
-    print(len(user_followings_list))
-    print(len(user_followers_list))
-
+    pprint(list(user_followers_info.values()))
