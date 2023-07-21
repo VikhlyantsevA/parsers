@@ -28,7 +28,8 @@ if __name__ == '__main__':
     runner = CrawlerRunner(settings)
 
     runner.crawl(CastoramaSpider,
-                 url_args={'q': 'смесители'})
+                 url_args={'q': 'смесители'},
+                 limit=2)
 
     d = runner.join()
     d.addBoth(lambda x: reactor.stop())
