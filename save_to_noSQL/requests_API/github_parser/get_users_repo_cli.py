@@ -41,12 +41,11 @@ if __name__ == '__main__':
 
     gh_parser = GithubApiParser(env_file=env_file)
 
-    if not os.path.exists(path_to_save):
-        os.mkdir(path_to_save)
-
+    fw = None
     try:
-        fw = None
         if path_to_save:
+            if not os.path.exists(path_to_save):
+                os.mkdir(path_to_save)
             fw = open(os.path.join(path_to_save, 'github_users_repos.json'), 'w', encoding='utf-8')
         for username in usernames:
             repos_info = gh_parser.get_response(f'/users/{username}/repos')

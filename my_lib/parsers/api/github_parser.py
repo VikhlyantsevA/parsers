@@ -1,6 +1,6 @@
 from dotenv import dotenv_values
 import requests
-import urllib
+from urllib.parse import urljoin
 
 
 class GithubApiParser:
@@ -26,7 +26,7 @@ class GithubApiParser:
         self.__token = self.__config.get('API_TOKEN')
 
     def get_response(self, endpoint, **kwargs):
-        url = urllib.parse.urljoin(self.host, endpoint)
+        url = urljoin(self.host, endpoint)
         headers = {
             'Authorization': f'Bearer {self.__token}'
         }
