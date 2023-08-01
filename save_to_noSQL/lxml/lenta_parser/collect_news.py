@@ -49,9 +49,8 @@ if __name__ == '__main__':
         title = news_card.xpath('.//*[contains(@class, "title")]/text()')[0]
 
         date_info = news_card.xpath('.//time[contains(@class, "card")]/text()')
-        if not date_info:
-            date_info = None
-        else:
+        created_at = None
+        if date_info:
             date_info = date_info[0].replace(' ', '').split(',')
             date_ = datetime.strptime(date_info[1], '%d%B%Y') if len(date_info) > 1 else datetime.now().date()
             time_ = datetime.strptime(date_info[0], '%H:%M').time()
