@@ -37,7 +37,7 @@ class HHParser(WebsiteParser):
         self._endpoint = endpoint
         self.m_utils = MongodbOperator()
 
-    def parse_data(self, search_params: dict, limit: int = None, **kwargs):
+    def parse_data(self, search_params: list, limit: int = None, **kwargs):
         max_retries = kwargs.get('max_retries', 8)
         headers = kwargs.get('headers', self._headers)
         url = f"{urljoin(self._base_url, self._endpoint)}?{urlencode(search_params)}"
@@ -77,12 +77,13 @@ class HHParser(WebsiteParser):
                     for i, pattern in enumerate(patterns):
                         match = pattern.match(salary_info_text)
                         if match:
+                            salary_info = {k: (v if not v else float(v) if v.isnumeric() else v.lower()) for k, v in
+                                           match.groupdict().items()}
                             break
                         elif not match and i == len(patterns) - 1:
                             raise Exception(f"There is a new pattern.\nSalaries info (text):{salary_info_text}")
 
-                    salary_info = {k: (v if not v else float(v) if v.isnumeric() else v.lower()) for k, v in
-                                     match.groupdict().items()}
+
 
                 resume_page_resp = self.get_response(url=resume_url, max_retries=max_retries, headers=headers)
                 resume_page_dom = bs(resume_page_resp.text, 'html.parser')

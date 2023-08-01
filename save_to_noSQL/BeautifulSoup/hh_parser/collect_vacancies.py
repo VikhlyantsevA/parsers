@@ -21,11 +21,11 @@ if __name__ == '__main__':
         ('items_on_page', 20)
     ]
 
-    hh_scrapper = HHParser(user_agent)
-    hh_scrapper.parse_data(search_params, limit=5)
+    hh_parser = HHParser(user_agent)
+    hh_parser.parse_data(search_params, limit=5)
 
 
     search_params = list(map(lambda x: x if x[0] != 'experience' else (x[0], 'between3And6'), search_params))
 
-    hh_scrapper = HHParser(user_agent)
-    hh_scrapper.parse_data(search_params, limit=5)
+    hh_parser = HHParser(user_agent)
+    hh_parser.parse_data(search_params, limit=5)
